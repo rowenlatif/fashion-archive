@@ -1,56 +1,96 @@
-# Welcome to your Expo app 👋
+# Fashion Archive
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A personal fashion archive — log what you wore, build a visual
+record of your wardrobe over time.
 
-## Get started
+> **Status:** in development. Not yet released.
 
-1. Install dependencies
+![Fashion Archive](docs/cover.png)
 
-   ```bash
-   npm install
-   ```
+## About
 
-2. Start the app
+Most closet apps are inventory tools; they optimize for knowing
+what you own. Fashion Archive treats a wardrobe as a record instead.
+Show what you actually wore, when, and how pieces recur across
+outfits over months.
 
-   ```bash
-   npx expo start
-   ```
+Built as a solo project exploring editorial visual language in a
+mobile product, and how far a design-led build can go with AI
+tooling in the loop.
 
-In the output, you'll find options to open the app in a
+## Features
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+**In progress**
+- [ ] Log a daily outfit from saved items
+- [ ] Item library with automatic background removal
+- [ ] Outfit detail view with related outfits
+- [ ] Monthly calendar view
+- [ ] Wardrobe stats — wear counts, cost-per-wear, category mix
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+**Planned**
+- [ ] Flat-lay outfit composition
+- [ ] Local fashion events — thrift markets, brand popups
+- [ ] Profiles
 
-## Get a fresh project
+## Design
 
-When you're ready, run:
+An editorial print sensibility on mobile: off-white ground,
+hairline rules, a five-step type scale, and negative space
+carrying most of the hierarchy.
+
+**Cutouts over AI try-on.** Virtual try-on models are capable
+now, but the output reads uncanny and fights a minimalist
+aesthetic. Garment cutouts arranged as flat-lay compositions are
+deterministic, instant, and closer to how fashion is actually
+photographed.
+
+**Design tokens generated from Figma.** Colors, type, and spacing
+live as Figma variables and are pulled into `theme.ts` via the
+Figma MCP server, so the design file stays the source of truth.
+
+![Screens](docs/screens.png)
+
+## Stack
+
+| | |
+|---|---|
+| App | React Native · Expo · Expo Router · TypeScript |
+| Backend | Supabase — Postgres, auth, storage |
+| Images | fal.ai — background removal |
+| Analytics | PostHog |
+| Design | Figma → theme tokens via Figma MCP |
+
+## Running locally
+
+Requires Node 22+ and Xcode (for the iOS simulator).
 
 ```bash
-npm run reset-project
+git clone git@github.com:rowenlatif/fashion-archive.git
+cd fashion-archive
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Then press `i` for the iOS simulator or `w` for browser.
 
-### Other setup steps
+Environment variables go in `.env` — see `.env.example`.
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## Structure
 
-## Learn more
+```
+app/           screens (Expo Router file-based routing)
+src/
+  components/  reusable UI
+  theme/       design tokens generated from Figma
+assets/        fonts and static images
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## Roadmap
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Core logging and browsing first, then outfit composition, then
+events. Social features are deliberately unscoped until the
+single-player experience is worth returning to.
 
-## Join the community
+---
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Design and development by [Rowen Latif](https://github.com/rowenlatif)
