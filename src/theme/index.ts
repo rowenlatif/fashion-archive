@@ -7,50 +7,60 @@ export const colors = {
   background: {
     white: '#FFFFFF',
     black: '#000000',
-    blackOverlay: '#000000',
+    blackOverlay: 'rgba(0, 0, 0, 0.2)',
   },
   button: {
     black: '#000000',
-    // Base color only — the "transparent" gradient/opacity treatment is applied
-    // at the component layer, not baked into this token (Figma has no gradient variables).
-    whiteTransparent: '#FFFFFF',
+    white90: 'rgba(255, 255, 255, 0.9)',
+    white65: 'rgba(255, 255, 255, 0.65)',
   },
   icons: {
     black: '#000000',
-    disabled: '#D9D9D9',
+    disabled: '#ACB0B3',
   },
   stroke: {
-    gray100: '#E0E0E0',
+    gray200: '#E0E0E0',
+    gray100: '#E7E7E7',
   },
 } as const;
 
 export type Colors = typeof colors;
 export type ColorGroup = keyof Colors;
 
+// "Gray Glass" — used on card/panel/sheet backgrounds. Figma has no gradient
+// variable type, so this isn't a flat color token; render with expo-linear-gradient.
+export const gradients = {
+  grayGlass: {
+    colors: ['rgba(236, 236, 238, 0.8)', 'rgba(243, 243, 245, 0.8)'],
+    start: { x: 0, y: 0.5 },
+    end: { x: 1, y: 0.5 },
+  },
+} as const;
+
 export const typography = {
   instrumentTitle: {
-    fontFamily: 'Instrument Serif',
+    fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 24,
     lineHeight: 31.2,
     fontWeight: '400',
     letterSpacing: 0,
   },
   instrumentBody: {
-    fontFamily: 'Instrument Serif',
+    fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 16,
     lineHeight: 20.8,
     fontWeight: '400',
     letterSpacing: 0,
   },
   ibmBody: {
-    fontFamily: 'IBM Plex Mono',
+    fontFamily: 'IBMPlexMono_400Regular',
     fontSize: 12,
     lineHeight: 15.6,
     fontWeight: '400',
     letterSpacing: 0,
   },
   ibmCaption: {
-    fontFamily: 'IBM Plex Mono',
+    fontFamily: 'IBMPlexMono_400Regular',
     fontSize: 12,
     lineHeight: 15.6,
     fontWeight: '400',
@@ -77,3 +87,33 @@ export const spacing = {
 
 export type Spacing = typeof spacing;
 export type SpacingToken = keyof Spacing;
+
+export const shadows = {
+  icon: {
+    shadowColor: colors.text.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.17,
+    shadowRadius: 0,
+  },
+  button: {
+    shadowColor: colors.text.black,
+    shadowOffset: { width: 1, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2.9,
+  },
+  card: {
+    shadowColor: colors.text.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.17,
+    shadowRadius: 9,
+  },
+  panel: {
+    shadowColor: colors.text.black,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 19.1,
+  },
+} as const;
+
+export type Shadows = typeof shadows;
+export type ShadowToken = keyof Shadows;
