@@ -1,7 +1,7 @@
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { CalendarDayCell, type CalendarDayCellProps } from '@/components/calendar-day-cell';
-import { IconButton } from '@/components/icon-button';
+import { Icon } from '@/components/icon';
 import { Text } from '@/components/text';
 import { spacing } from '@/theme';
 
@@ -18,13 +18,17 @@ export function CalendarView({ month, days, onPrevMonth, onNextMonth }: Calendar
   return (
     <View style={styles.root}>
       <View style={styles.header}>
-        <IconButton name="chevron" rotation={90} tone="solid" onPress={onPrevMonth} />
-        <Text variant="body">{month}</Text>
-        <IconButton name="chevron" rotation={270} tone="solid" onPress={onNextMonth} />
+        <Pressable onPress={onPrevMonth} hitSlop={spacing.sm}>
+          <Icon name="chevron" rotation={90} />
+        </Pressable>
+        <Text variant="title">{month}</Text>
+        <Pressable onPress={onNextMonth} hitSlop={spacing.sm}>
+          <Icon name="chevron" rotation={270} />
+        </Pressable>
       </View>
       <View style={styles.weekdays}>
         {WEEKDAYS.map((day) => (
-          <Text key={day} variant="caption" color="gray" style={styles.weekday}>
+          <Text key={day} variant="micro" style={styles.weekday}>
             {day}
           </Text>
         ))}
@@ -32,7 +36,7 @@ export function CalendarView({ month, days, onPrevMonth, onNextMonth }: Calendar
       <View style={styles.grid}>
         {days.map((day, i) => (
           <View key={i} style={styles.column}>
-            {day && <CalendarDayCell {...day} />}
+            <CalendarDayCell date={day?.date} image={day?.image} />
           </View>
         ))}
       </View>
@@ -46,16 +50,17 @@ const styles = StyleSheet.create({
   // divide the row into 7 equal columns.
   root: {
     width: '100%',
+    gap: spacing.xs,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.xxl,
   },
   weekdays: {
     flexDirection: 'row',
+    paddingVertical: spacing.xs,
   },
   weekday: {
     flex: 1,

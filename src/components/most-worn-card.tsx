@@ -20,7 +20,7 @@ export function MostWornCard({ image, title, subtitle }: MostWornCardProps) {
           {image && <Image source={image} style={styles.image} contentFit="cover" />}
         </View>
         <View style={styles.info}>
-          <Text variant="body">{title}</Text>
+          <Text variant="bodyLarge">{title}</Text>
           <Text variant="caption" color="gray">
             {subtitle}
           </Text>
@@ -33,6 +33,7 @@ export function MostWornCard({ image, title, subtitle }: MostWornCardProps) {
 const styles = StyleSheet.create({
   card: {
     gap: spacing.md,
+    padding: spacing.sm,
   },
   row: {
     flexDirection: 'row',

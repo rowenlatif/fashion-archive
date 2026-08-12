@@ -1,4 +1,3 @@
-import { GlassView } from 'expo-glass-effect';
 import { Pressable, StyleSheet, View, type PressableProps } from 'react-native';
 
 import { Icon, type IconName } from '@/components/icon';
@@ -17,13 +16,7 @@ export function IconButton({ name, disabled, rotation = 0, tone = 'muted', ...re
   const glyph = <Icon name={name} color={disabled ? 'disabled' : 'black'} rotation={rotation} />;
 
   if (disabled) {
-    return (
-      <View style={styles.base}>
-        <GlassView glassEffectStyle="regular" style={styles.fill}>
-          {glyph}
-        </GlassView>
-      </View>
-    );
+    return <View style={styles.base}>{glyph}</View>;
   }
 
   return (
@@ -50,15 +43,5 @@ const styles = StyleSheet.create({
   },
   solid: {
     backgroundColor: colors.background.white,
-  },
-  fill: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: spacing.md,
   },
 });

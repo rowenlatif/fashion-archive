@@ -1,18 +1,29 @@
 import { Image, type ImageSource } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 
-import { colors, spacing } from '@/theme';
+import { spacing } from '@/theme';
 
 export type OutfitGridProps = {
   images: (ImageSource | number)[];
 };
 
+const COLUMNS = 3;
+
 export function OutfitGrid({ images }: OutfitGridProps) {
+  const rows: OutfitGridProps['images'][] = [];
+  for (let i = 0; i < images.length; i += COLUMNS) {
+    rows.push(images.slice(i, i + COLUMNS));
+  }
+
   return (
     <View style={styles.grid}>
-      {images.map((image, i) => (
-        <View key={i} style={styles.tile}>
-          <Image source={image} style={styles.image} contentFit="cover" />
+      {rows.map((row, r) => (
+        <View key={r} style={styles.row}>
+          {row.map((image, c) => (
+            <View key={c} style={styles.tile}>
+              <Image source={image} style={styles.image} contentFit="cover" />
+            </View>
+          ))}
         </View>
       ))}
     </View>
@@ -21,15 +32,19 @@ export function OutfitGrid({ images }: OutfitGridProps) {
 
 const styles = StyleSheet.create({
   grid: {
+    gap: spacing.lg,
+  },
+  row: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
+    justifyContent: 'space-between',
   },
   tile: {
-    width: '31%',
-    aspectRatio: 51.2 / 190,
+    // Figma: a 51.229px tile inside a 338px content row (402px frame minus
+    // 32px padding either side) — thin cropped strips with generous gaps
+    // between them, not a filled grid.
+    width: '15.16%',
+    aspectRatio: 51.229 / 190,
     borderRadius: spacing.xs,
-    backgroundColor: colors.stroke.gray100,
     overflow: 'hidden',
   },
   image: {

@@ -52,6 +52,15 @@ export const typography = {
     fontWeight: '400',
     letterSpacing: 0,
   },
+  // A modest step up from instrumentBody, short of the display-sized title —
+  // for labels like "Most Worn This Month" that want slightly more presence.
+  instrumentBodyLarge: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 18,
+    lineHeight: 23.4,
+    fontWeight: '400',
+    letterSpacing: 0,
+  },
   ibmBody: {
     fontFamily: 'IBMPlexMono_400Regular',
     fontSize: 12,
@@ -66,6 +75,13 @@ export const typography = {
     fontWeight: '400',
     letterSpacing: 0,
     color: colors.text.gray,
+  },
+  ibmMicro: {
+    fontFamily: 'IBMPlexMono_400Regular',
+    fontSize: 8,
+    lineHeight: 10.4,
+    fontWeight: '400',
+    letterSpacing: 0,
   },
 } as const;
 
@@ -83,6 +99,13 @@ export const spacing = {
   xxl: 32,
   xxxl: 48,
   huge: 64,
+  // 56px gap between Home screen sections (header block → grid) — falls
+  // between xxxl and huge on the 4pt scale, not yet folded into a named step.
+  sectionGap: 56,
+  // 20px — Home's calendar view: header-to-content gap, and the gap between
+  // the calendar and "most worn" list. Falls between lg and xl, not yet
+  // folded into a named step.
+  tight: 20,
 } as const;
 
 export type Spacing = typeof spacing;

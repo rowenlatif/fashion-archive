@@ -11,9 +11,7 @@ export type AppHeaderProps = ViewToggleProps;
 export function AppHeader({ value, onChange }: AppHeaderProps) {
   return (
     <View style={styles.row}>
-      <Text variant="mono" style={styles.wordmark}>
-        ROWEN ARCHIVE
-      </Text>
+      <Text variant="title">ROWEN ARCHIVE</Text>
       <ViewToggle value={value} onChange={onChange} />
     </View>
   );
@@ -25,8 +23,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.xl,
-  },
-  wordmark: {
-    letterSpacing: 1,
   },
 });

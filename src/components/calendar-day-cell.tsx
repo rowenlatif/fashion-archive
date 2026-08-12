@@ -5,16 +5,20 @@ import { Text } from '@/components/text';
 import { colors, spacing } from '@/theme';
 
 export type CalendarDayCellProps = ViewProps & {
-  date: number;
+  // Omitted for the leading/trailing blanks outside the month — the bordered
+  // cell still renders, just without a date number or photo.
+  date?: number;
   image?: ImageSource | number;
 };
 
 export function CalendarDayCell({ date, image, style, ...rest }: CalendarDayCellProps) {
   return (
     <View style={[styles.cell, style]} {...rest}>
-      <Text variant="mono" style={styles.date}>
-        {date}
-      </Text>
+      {date != null && (
+        <Text variant="mono" style={styles.date}>
+          {date}
+        </Text>
+      )}
       {image && <Image source={image} style={styles.image} contentFit="contain" />}
     </View>
   );
