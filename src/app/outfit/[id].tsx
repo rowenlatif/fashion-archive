@@ -95,6 +95,8 @@ export default function OutfitScreen() {
   };
   const pushExiting = (values: ExitAnimationsValues) => {
     'worklet';
+    // TEMP DIAGNOSTIC — remove once the close-button slide is root-caused.
+    console.log('[outfit] pushExiting fired, isLeaving.value =', isLeaving.value);
     // Leaving the screen entirely rather than swiping — let the router's own
     // transition (or lack of one) handle it; don't also slide our content.
     const target = isLeaving.value
@@ -131,6 +133,8 @@ export default function OutfitScreen() {
           <OutfitTitleBlock title={outfit.title} time={outfit.time} category={outfit.category} />
           <Pressable
             onPress={() => {
+              // TEMP DIAGNOSTIC — remove once the close-button slide is root-caused.
+              console.log('[outfit] close pressed, setting isLeaving.value = true');
               isLeaving.value = true;
               router.back();
             }}
