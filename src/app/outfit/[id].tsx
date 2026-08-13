@@ -1,11 +1,12 @@
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
   type EntryAnimationsValues,
   type ExitAnimationsValues,
+  LayoutAnimationConfig,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
@@ -51,15 +52,14 @@ export default function OutfitScreen() {
   // Only true once a chevron has actually been tapped — the initial photo
   // (arriving from Home/Calendar) must appear instantly, with no push.
   const [hasSwiped, setHasSwiped] = useState(false);
-  // A shared value, not React state: setting isLeaving via setState and
-  // calling router.back() land in the same commit, so this component
-  // unmounts without ever getting a chance to re-render with an updated
-  // prop — the exiting animation would still run using its last-rendered
-  // value. A shared value has no such gap: writing isLeaving.value is
-  // immediately visible to the worklet, which reads it fresh at the moment
-  // it actually runs on the UI thread, however this component's removal
-  // was triggered.
-  const isLeaving = useSharedValue(false);
+  // True once the close button has been pressed. Drives the skipExiting
+  // flag below rather than nulling out the exiting prop directly — a
+  // worklet-level check on a flag written right before router.back() looked
+  // right on paper (Reanimated reads shared values live) but still let the
+  // slide through in practice. LayoutAnimationConfig's skipExiting is read
+  // from componentWillUnmount, which is a React lifecycle guarantee rather
+  // than a race against when a UI-thread worklet happens to run.
+  const [isClosing, setIsClosing] = useState(false);
   // Header and toolbar heights are dynamic (title text wraps, insets vary),
   // so the fixed chevrons — now siblings of the sliding page — measure the
   // photo row's own rect to stay vertically centered on the photo rather
@@ -67,6 +67,15 @@ export default function OutfitScreen() {
   const [photoRowRect, setPhotoRowRect] = useState<{ top: number; height: number } | null>(null);
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
+  // Runs only after the isClosing=true render above has committed, so
+  // LayoutAnimationConfig has already re-rendered with skipExiting={true}
+  // by the time this view actually leaves the tree.
+  useEffect(() => {
+    if (isClosing) {
+      router.back();
+    }
+  }, [isClosing, router]);
 
   const goPrev = () => {
     direction.value = -1;
@@ -95,20 +104,13 @@ export default function OutfitScreen() {
   };
   const pushExiting = (values: ExitAnimationsValues) => {
     'worklet';
-    // TEMP DIAGNOSTIC — remove once the close-button slide is root-caused.
-    console.log('[outfit] pushExiting fired, isLeaving.value =', isLeaving.value);
-    // Leaving the screen entirely rather than swiping — let the router's own
-    // transition (or lack of one) handle it; don't also slide our content.
-    const target = isLeaving.value
-      ? values.currentOriginX
-      : values.currentOriginX - direction.value * values.windowWidth;
     return {
       initialValues: {
         originX: values.currentOriginX,
       },
       animations: {
-        originX: withTiming(target, {
-          duration: isLeaving.value ? 0 : PUSH_DURATION,
+        originX: withTiming(values.currentOriginX - direction.value * values.windowWidth, {
+          duration: PUSH_DURATION,
           easing: PUSH_EASING,
         }),
       },
@@ -121,55 +123,54 @@ export default function OutfitScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       {/* Everything — details, photo, chevrons, toolbar — lives in one
           Animated.View keyed by photo index, so the whole page pushes as a
-          single unit instead of just the photo sliding inside it. */}
-      <Animated.View
-        key={index}
-        // Skipped entirely until the first swipe, so arriving on this screen
-        // never shows the push.
-        entering={hasSwiped ? pushEntering : undefined}
-        exiting={pushExiting}
-        style={styles.page}>
-        <View style={styles.header}>
-          <OutfitTitleBlock title={outfit.title} time={outfit.time} category={outfit.category} />
-          <Pressable
-            onPress={() => {
-              // TEMP DIAGNOSTIC — remove once the close-button slide is root-caused.
-              console.log('[outfit] close pressed, setting isLeaving.value = true');
-              isLeaving.value = true;
-              router.back();
-            }}
-            hitSlop={spacing.sm}>
-            <Icon name="close" size={12} />
-          </Pressable>
-        </View>
-        <View
-          style={styles.photoRow}
-          onLayout={(e) =>
-            setPhotoRowRect({ top: e.nativeEvent.layout.y, height: e.nativeEvent.layout.height })
-          }>
-          <View style={styles.photoStage}>
-            <View style={styles.photoWrap}>
-              {photo ? (
-                <Image source={photo} style={styles.photo} contentFit="cover" />
-              ) : (
-                <View style={[styles.photo, styles.photoPlaceholder]} />
-              )}
+          single unit instead of just the photo sliding inside it. Wrapped in
+          LayoutAnimationConfig so closing can disable the exit animation
+          straight from React's unmount lifecycle instead of racing a
+          worklet against the moment router.back() actually tears this view
+          down. */}
+      <LayoutAnimationConfig skipExiting={isClosing}>
+        <Animated.View
+          key={index}
+          // Skipped entirely until the first swipe, so arriving on this screen
+          // never shows the push.
+          entering={hasSwiped ? pushEntering : undefined}
+          exiting={pushExiting}
+          style={styles.page}>
+          <View style={styles.header}>
+            <OutfitTitleBlock
+              title={outfit.title}
+              time={outfit.time}
+              category={outfit.category}
+            />
+          </View>
+          <View
+            style={styles.photoRow}
+            onLayout={(e) =>
+              setPhotoRowRect({ top: e.nativeEvent.layout.y, height: e.nativeEvent.layout.height })
+            }>
+            <View style={styles.photoStage}>
+              <View style={styles.photoWrap}>
+                {photo ? (
+                  <Image source={photo} style={styles.photo} contentFit="cover" />
+                ) : (
+                  <View style={[styles.photo, styles.photoPlaceholder]} />
+                )}
+              </View>
             </View>
           </View>
-        </View>
-        <View style={[styles.toolbarWrap, { paddingBottom: insets.bottom + spacing.xxl }]}>
-          <IconToolbar
-            icons={[{ name: 'info' }, { name: 'link' }, { name: 'edit' }]}
-            style={styles.toolbar}
-          />
-        </View>
-      </Animated.View>
+          <View style={[styles.toolbarWrap, { paddingBottom: insets.bottom + spacing.xxl }]}>
+            <IconToolbar
+              icons={[{ name: 'info' }, { name: 'link' }, { name: 'edit' }]}
+              style={styles.toolbar}
+            />
+          </View>
+        </Animated.View>
+      </LayoutAnimationConfig>
       {/* Siblings of the remounting Animated.View, not descendants — a chevron
           that lived inside it got unmounted and remounted by the very tap
           that pressed it, which is what made presses drop or feel "stuck".
           Held back until photoRowRect is measured so there's never a frame
-          where they fall back to spanning the full screen and sit on top of
-          the header's close button. */}
+          where they fall back to spanning the full screen. */}
       {photoRowRect && (
         <>
           <Pressable
@@ -186,6 +187,15 @@ export default function OutfitScreen() {
           </Pressable>
         </>
       )}
+      {/* Its own top-level, high-zIndex container rather than living inside
+          the header row — the right chevron's absolutely-positioned hit
+          region was overlapping it there and swallowing every tap. */}
+      <Pressable
+        onPress={() => setIsClosing(true)}
+        hitSlop={spacing.sm}
+        style={[styles.closeButton, { top: insets.top + spacing.md }]}>
+        <Icon name="close" size={12} />
+      </Pressable>
     </SafeAreaView>
   );
 }
@@ -202,11 +212,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.md,
+  },
+  closeButton: {
+    position: 'absolute',
+    right: spacing.xl,
+    zIndex: 10,
   },
   photoRow: {
     flex: 1,
