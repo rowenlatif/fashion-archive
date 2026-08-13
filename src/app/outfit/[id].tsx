@@ -2,7 +2,13 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import Animated, { SlideInLeft, SlideInRight } from 'react-native-reanimated';
+import Animated, {
+  Easing,
+  type EntryAnimationsValues,
+  type ExitAnimationsValues,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/icon';
@@ -27,19 +33,21 @@ const OUTFITS: Record<
   },
 };
 
-// overshootClamping keeps this a clean directional push rather than a
-// spring bounce-back — the previous version still had a small overshoot.
-// The layout-animation builder's overshootClamping takes a number (1/0),
-// unlike withSpring's boolean option.
-const SPRING = { damping: 26, stiffness: 200, overshootClamping: 1 };
+const PUSH_DURATION = 340;
+const PUSH_EASING = Easing.out(Easing.cubic);
 
 export default function OutfitScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const outfit = OUTFITS[id ?? '1'] ?? OUTFITS['1'];
-  const [nav, setNav] = useState<{ index: number; direction: 'prev' | 'next' }>({
-    index: 0,
-    direction: 'next',
-  });
+  const [index, setIndex] = useState(0);
+  // A shared value, not React state: the entering/exiting worklets below are
+  // the SAME function reference on every tap, so each one just reads
+  // whatever direction is current at the moment it actually runs on the UI
+  // thread. Picking between two different builders (e.g. SlideInLeft vs.
+  // SlideInRight) based on React state doesn't work for the *exiting* side —
+  // the outgoing view already rendered with the previous tap's direction, so
+  // reversing direction mid-swipe would replay the wrong exit.
+  const direction = useSharedValue<1 | -1>(1);
   // Only true once a chevron has actually been tapped — the initial photo
   // (arriving from Home/Calendar) must appear instantly, with no push.
   const [hasSwiped, setHasSwiped] = useState(false);
@@ -52,15 +60,46 @@ export default function OutfitScreen() {
   const insets = useSafeAreaInsets();
 
   const goPrev = () => {
+    direction.value = -1;
     setHasSwiped(true);
-    setNav((n) => ({ index: Math.max(0, n.index - 1), direction: 'prev' }));
+    setIndex((i) => Math.max(0, i - 1));
   };
   const goNext = () => {
+    direction.value = 1;
     setHasSwiped(true);
-    setNav((n) => ({ index: Math.min(outfit.photos.length - 1, n.index + 1), direction: 'next' }));
+    setIndex((i) => Math.min(outfit.photos.length - 1, i + 1));
   };
 
-  const photo = outfit.photos[nav.index];
+  const pushEntering = (values: EntryAnimationsValues) => {
+    'worklet';
+    return {
+      initialValues: {
+        originX: values.targetOriginX + direction.value * values.windowWidth,
+      },
+      animations: {
+        originX: withTiming(values.targetOriginX, {
+          duration: PUSH_DURATION,
+          easing: PUSH_EASING,
+        }),
+      },
+    };
+  };
+  const pushExiting = (values: ExitAnimationsValues) => {
+    'worklet';
+    return {
+      initialValues: {
+        originX: values.currentOriginX,
+      },
+      animations: {
+        originX: withTiming(values.currentOriginX - direction.value * values.windowWidth, {
+          duration: PUSH_DURATION,
+          easing: PUSH_EASING,
+        }),
+      },
+    };
+  };
+
+  const photo = outfit.photos[index];
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -68,22 +107,11 @@ export default function OutfitScreen() {
           Animated.View keyed by photo index, so the whole page pushes as a
           single unit instead of just the photo sliding inside it. */}
       <Animated.View
-        key={nav.index}
-        // Exiting is deliberately skipped: its direction would be fixed at
-        // this view's own mount time, so reversing direction on the next
-        // tap would replay the wrong exit. Entering is always recomputed
-        // fresh for the current tap, so it's always correct. Skipped
-        // entirely until the first swipe, so arriving on this screen never
-        // shows the push.
-        entering={
-          hasSwiped
-            ? (nav.direction === 'next' ? SlideInRight : SlideInLeft)
-                .springify()
-                .damping(SPRING.damping)
-                .stiffness(SPRING.stiffness)
-                .overshootClamping(SPRING.overshootClamping)
-            : undefined
-        }
+        key={index}
+        // Skipped entirely until the first swipe, so arriving on this screen
+        // never shows the push.
+        entering={hasSwiped ? pushEntering : undefined}
+        exiting={pushExiting}
         style={styles.page}>
         <View style={styles.header}>
           <OutfitTitleBlock title={outfit.title} time={outfit.time} category={outfit.category} />
