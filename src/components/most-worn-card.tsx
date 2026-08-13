@@ -9,12 +9,15 @@ export type MostWornCardProps = {
   image?: ImageSource | number;
   title: string;
   subtitle: string;
+  // False for the first card in a list — the divider above it is redundant
+  // right under the calendar, but still wanted between subsequent cards.
+  showRule?: boolean;
 };
 
-export function MostWornCard({ image, title, subtitle }: MostWornCardProps) {
+export function MostWornCard({ image, title, subtitle, showRule = true }: MostWornCardProps) {
   return (
     <View style={styles.card}>
-      <Rule />
+      {showRule && <Rule />}
       <View style={styles.row}>
         <View style={styles.thumb}>
           {image && <Image source={image} style={styles.image} contentFit="cover" />}

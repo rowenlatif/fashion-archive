@@ -13,7 +13,7 @@ export type OutfitTitleBlockProps = ViewProps & {
 export function OutfitTitleBlock({ title, time, category, style, ...rest }: OutfitTitleBlockProps) {
   return (
     <View style={[styles.block, style]} {...rest}>
-      <Text variant="mono">{title}</Text>
+      <Text variant="body">{title}</Text>
       <View style={styles.row}>
         <Icon name="time" color="gray" />
         <Text variant="caption">{time}</Text>

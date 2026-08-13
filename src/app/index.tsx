@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -41,6 +42,10 @@ export default function HomeScreen() {
   // No bottom tab bar is rendered yet, so this only needs to clear the
   // home-indicator safe area — revisit once <AppTabs /> is back.
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+  // Demo-only: every tile/day opens the same mock outfit for now — see
+  // src/app/outfit/[id].tsx. Replace once tiles/days carry a real outfit id.
+  const openOutfit = () => router.push('/outfit/1');
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -49,14 +54,14 @@ export default function HomeScreen() {
         <AppHeader value={view} onChange={setView} />
         {view === 'grid' ? (
           <View style={styles.gridWrap}>
-            <OutfitGrid images={outfitPhotos} />
+            <OutfitGrid images={outfitPhotos} onPressImage={openOutfit} />
           </View>
         ) : (
           <View style={styles.calendarWrap}>
-            <CalendarView month="april 2026" days={APRIL_DAYS} />
+            <CalendarView month="april 2026" days={APRIL_DAYS} onPressDay={openOutfit} />
             <View>
               {MOST_WORN.map((item, i) => (
-                <MostWornCard key={i} title={item.title} subtitle={item.subtitle} />
+                <MostWornCard key={i} title={item.title} subtitle={item.subtitle} showRule={i > 0} />
               ))}
             </View>
           </View>

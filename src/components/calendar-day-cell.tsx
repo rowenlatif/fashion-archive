@@ -1,5 +1,5 @@
 import { Image, type ImageSource } from 'expo-image';
-import { StyleSheet, View, type ViewProps } from 'react-native';
+import { Pressable, StyleSheet, type ViewProps } from 'react-native';
 
 import { Text } from '@/components/text';
 import { colors, spacing } from '@/theme';
@@ -9,18 +9,20 @@ export type CalendarDayCellProps = ViewProps & {
   // cell still renders, just without a date number or photo.
   date?: number;
   image?: ImageSource | number;
+  // Only meaningful when there's a logged outfit photo to open.
+  onPress?: () => void;
 };
 
-export function CalendarDayCell({ date, image, style, ...rest }: CalendarDayCellProps) {
+export function CalendarDayCell({ date, image, onPress, style, ...rest }: CalendarDayCellProps) {
   return (
-    <View style={[styles.cell, style]} {...rest}>
+    <Pressable style={[styles.cell, style]} onPress={image ? onPress : undefined} {...rest}>
       {date != null && (
         <Text variant="mono" style={styles.date}>
           {date}
         </Text>
       )}
       {image && <Image source={image} style={styles.image} contentFit="contain" />}
-    </View>
+    </Pressable>
   );
 }
 

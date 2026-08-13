@@ -12,9 +12,12 @@ export type CalendarViewProps = {
   days: (Pick<CalendarDayCellProps, 'date' | 'image'> | null)[];
   onPrevMonth?: () => void;
   onNextMonth?: () => void;
+  // Demo-only wiring: every day opens the same mock outfit for now — see
+  // src/app/outfit/[id].tsx. Replace once days carry a real outfit id.
+  onPressDay?: (index: number) => void;
 };
 
-export function CalendarView({ month, days, onPrevMonth, onNextMonth }: CalendarViewProps) {
+export function CalendarView({ month, days, onPrevMonth, onNextMonth, onPressDay }: CalendarViewProps) {
   return (
     <View style={styles.root}>
       <View style={styles.header}>
@@ -36,7 +39,11 @@ export function CalendarView({ month, days, onPrevMonth, onNextMonth }: Calendar
       <View style={styles.grid}>
         {days.map((day, i) => (
           <View key={i} style={styles.column}>
-            <CalendarDayCell date={day?.date} image={day?.image} />
+            <CalendarDayCell
+              date={day?.date}
+              image={day?.image}
+              onPress={onPressDay && (() => onPressDay(i))}
+            />
           </View>
         ))}
       </View>
