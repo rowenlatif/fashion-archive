@@ -14,6 +14,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Icon } from '@/components/icon';
 import { IconToolbar } from '@/components/icon-toolbar';
+import { OutfitDetailsCard } from '@/components/outfit-details-card';
 import { OutfitTitleBlock } from '@/components/outfit-title-block';
 import { colors, spacing } from '@/theme';
 
@@ -24,13 +25,28 @@ const OUTFIT_PHOTO = require('@/assets/images/cal-fit-view.png');
 // as a plain gray rectangle so the swipe transition is easy to see.
 const OUTFITS: Record<
   string,
-  { title: string; time: string; category: string; photos: (number | null)[] }
+  {
+    title: string;
+    time: string;
+    category: string;
+    photos: (number | null)[];
+    items: { image: number; label: string }[];
+  }
 > = {
   '1': {
     title: 'CASUAL 1',
     time: 'FRI, 18 MAY 2026',
     category: 'NIGHT OUT',
     photos: [OUTFIT_PHOTO, null],
+    items: [
+      {
+        image: require('@/assets/images/items/studded-off-shoulder-top.png'),
+        label: 'Studded Off\nShoulder Top',
+      },
+      { image: require('@/assets/images/items/brown-tank-top.png'), label: 'Brown\nTank Top' },
+      { image: require('@/assets/images/items/black-mini-skirt.png'), label: 'Black\nMini Skirt' },
+      { image: require('@/assets/images/items/brown-boots.png'), label: 'Brown\nBoots' },
+    ],
   },
 };
 
@@ -65,6 +81,9 @@ export default function OutfitScreen() {
   // photo row's own rect to stay vertically centered on the photo rather
   // than on the full screen.
   const [photoRowRect, setPhotoRowRect] = useState<{ top: number; height: number } | null>(null);
+  // Toggled by the toolbar's info icon — shows the outfit details panel and
+  // shrinks the photo to make room for it.
+  const [showDetails, setShowDetails] = useState(false);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -117,6 +136,42 @@ export default function OutfitScreen() {
     };
   };
 
+  // Grows the details panel up into place rather than just fading it —
+  // starts smaller and lower, scales/slides up to full size, so it reads as
+  // popping out of the toolbar area instead of materializing flat.
+  const panelEntering = (_values: EntryAnimationsValues) => {
+    'worklet';
+    return {
+      initialValues: {
+        opacity: 0,
+        transform: [{ scale: 0.85 }, { translateY: spacing.lg }],
+      },
+      animations: {
+        opacity: withTiming(1, { duration: PUSH_DURATION, easing: PUSH_EASING }),
+        transform: [
+          { scale: withTiming(1, { duration: PUSH_DURATION, easing: PUSH_EASING }) },
+          { translateY: withTiming(0, { duration: PUSH_DURATION, easing: PUSH_EASING }) },
+        ],
+      },
+    };
+  };
+  const panelExiting = (_values: ExitAnimationsValues) => {
+    'worklet';
+    return {
+      initialValues: {
+        opacity: 1,
+        transform: [{ scale: 1 }, { translateY: 0 }],
+      },
+      animations: {
+        opacity: withTiming(0, { duration: PUSH_DURATION, easing: PUSH_EASING }),
+        transform: [
+          { scale: withTiming(0.85, { duration: PUSH_DURATION, easing: PUSH_EASING }) },
+          { translateY: withTiming(spacing.lg, { duration: PUSH_DURATION, easing: PUSH_EASING }) },
+        ],
+      },
+    };
+  };
+
   const photo = outfit.photos[index];
 
   return (
@@ -145,9 +200,13 @@ export default function OutfitScreen() {
           </View>
           <View
             style={styles.photoRow}
-            onLayout={(e) =>
-              setPhotoRowRect({ top: e.nativeEvent.layout.y, height: e.nativeEvent.layout.height })
-            }>
+            onLayout={(e) => {
+              // Ignored while the details panel is open — its rect reflects
+              // the shrunk photo, and the chevrons should stay put rather
+              // than following the photo down to its smaller size.
+              if (showDetails) return;
+              setPhotoRowRect({ top: e.nativeEvent.layout.y, height: e.nativeEvent.layout.height });
+            }}>
             <View style={styles.photoStage}>
               <View style={styles.photoWrap}>
                 {photo ? (
@@ -158,9 +217,21 @@ export default function OutfitScreen() {
               </View>
             </View>
           </View>
+          {showDetails && (
+            <Animated.View
+              entering={panelEntering}
+              exiting={panelExiting}
+              style={styles.detailsWrap}>
+              <OutfitDetailsCard items={outfit.items} />
+            </Animated.View>
+          )}
           <View style={[styles.toolbarWrap, { paddingBottom: insets.bottom + spacing.xxl }]}>
             <IconToolbar
-              icons={[{ name: 'info' }, { name: 'link' }, { name: 'edit' }]}
+              icons={[
+                { name: 'info', onPress: () => setShowDetails((v) => !v) },
+                { name: 'link' },
+                { name: 'edit' },
+              ]}
               style={styles.toolbar}
             />
           </View>
@@ -256,6 +327,10 @@ const styles = StyleSheet.create({
   },
   photoPlaceholder: {
     backgroundColor: colors.background.blackOverlay,
+  },
+  detailsWrap: {
+    paddingTop: spacing.lg,
+    paddingHorizontal: spacing.xxl,
   },
   toolbarWrap: {
     paddingTop: spacing.lg,

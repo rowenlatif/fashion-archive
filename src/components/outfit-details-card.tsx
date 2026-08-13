@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 
 import { GlassSurface } from '@/components/glass-surface';
 import { ItemCard, type ItemCardProps } from '@/components/item-card';
@@ -15,11 +15,14 @@ export function OutfitDetailsCard({ items }: OutfitDetailsCardProps) {
       <Text variant="caption" color="gray" style={styles.label}>
         OUTFIT DETAILS
       </Text>
-      <View style={styles.row}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.row}>
         {items.map((item) => (
           <ItemCard key={item.label} {...item} />
         ))}
-      </View>
+      </ScrollView>
     </GlassSurface>
   );
 }
@@ -35,8 +38,6 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
     gap: spacing.md,
   },
 });

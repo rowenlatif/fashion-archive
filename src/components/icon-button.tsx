@@ -22,7 +22,11 @@ export function IconButton({ name, disabled, rotation = 0, tone = 'muted', ...re
   return (
     <Pressable
       disabled={disabled}
-      style={[styles.base, tone === 'solid' ? styles.solid : styles.muted]}
+      style={({ pressed }) => [
+        styles.base,
+        tone === 'solid' ? styles.solid : styles.muted,
+        pressed && styles.pressed,
+      ]}
       {...rest}>
       {glyph}
     </Pressable>
@@ -43,5 +47,8 @@ const styles = StyleSheet.create({
   },
   solid: {
     backgroundColor: colors.background.white,
+  },
+  pressed: {
+    opacity: 0.6,
   },
 });
