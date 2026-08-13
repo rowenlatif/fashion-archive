@@ -115,19 +115,26 @@ export default function OutfitScreen() {
       </Animated.View>
       {/* Siblings of the remounting Animated.View, not descendants — a chevron
           that lived inside it got unmounted and remounted by the very tap
-          that pressed it, which is what made presses drop or feel "stuck". */}
-      <Pressable
-        onPress={goPrev}
-        hitSlop={spacing.sm}
-        style={[styles.nav, styles.navLeft, photoRowRect]}>
-        <Icon name="chevron" rotation={90} />
-      </Pressable>
-      <Pressable
-        onPress={goNext}
-        hitSlop={spacing.sm}
-        style={[styles.nav, styles.navRight, photoRowRect]}>
-        <Icon name="chevron" rotation={270} />
-      </Pressable>
+          that pressed it, which is what made presses drop or feel "stuck".
+          Held back until photoRowRect is measured so there's never a frame
+          where they fall back to spanning the full screen and sit on top of
+          the header's close button. */}
+      {photoRowRect && (
+        <>
+          <Pressable
+            onPress={goPrev}
+            hitSlop={spacing.sm}
+            style={[styles.nav, styles.navLeft, photoRowRect]}>
+            <Icon name="chevron" rotation={90} />
+          </Pressable>
+          <Pressable
+            onPress={goNext}
+            hitSlop={spacing.sm}
+            style={[styles.nav, styles.navRight, photoRowRect]}>
+            <Icon name="chevron" rotation={270} />
+          </Pressable>
+        </>
+      )}
     </SafeAreaView>
   );
 }
@@ -158,8 +165,6 @@ const styles = StyleSheet.create({
   // stay put while the whole page pushes behind them.
   nav: {
     position: 'absolute',
-    top: 0,
-    bottom: 0,
     width: 44,
     alignItems: 'center',
     justifyContent: 'center',
