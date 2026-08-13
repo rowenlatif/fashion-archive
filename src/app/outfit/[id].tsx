@@ -51,6 +51,13 @@ export default function OutfitScreen() {
   // Only true once a chevron has actually been tapped — the initial photo
   // (arriving from Home/Calendar) must appear instantly, with no push.
   const [hasSwiped, setHasSwiped] = useState(false);
+  // True once the close button has been pressed. Any removal of this view
+  // from the tree fires pushExiting, not just a photo-index swap — without
+  // this flag, leaving the screen entirely would also trigger the swipe's
+  // slide-out, fighting the router's own back transition. Setting it before
+  // router.back() clears the exiting prop on this still-mounted instance in
+  // time for it to be unset by the moment the screen actually unmounts.
+  const [isLeaving, setIsLeaving] = useState(false);
   // Header and toolbar heights are dynamic (title text wraps, insets vary),
   // so the fixed chevrons — now siblings of the sliding page — measure the
   // photo row's own rect to stay vertically centered on the photo rather
@@ -111,11 +118,16 @@ export default function OutfitScreen() {
         // Skipped entirely until the first swipe, so arriving on this screen
         // never shows the push.
         entering={hasSwiped ? pushEntering : undefined}
-        exiting={pushExiting}
+        exiting={isLeaving ? undefined : pushExiting}
         style={styles.page}>
         <View style={styles.header}>
           <OutfitTitleBlock title={outfit.title} time={outfit.time} category={outfit.category} />
-          <Pressable onPress={() => router.back()} hitSlop={spacing.sm}>
+          <Pressable
+            onPress={() => {
+              setIsLeaving(true);
+              router.back();
+            }}
+            hitSlop={spacing.sm}>
             <Icon name="close" size={12} />
           </Pressable>
         </View>
