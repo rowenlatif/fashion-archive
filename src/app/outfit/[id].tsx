@@ -16,46 +16,16 @@ import { Icon } from '@/components/icon';
 import { IconToolbar } from '@/components/icon-toolbar';
 import { OutfitDetailsCard } from '@/components/outfit-details-card';
 import { OutfitTitleBlock } from '@/components/outfit-title-block';
+import { Text } from '@/components/text';
+import { useOutfitDetail } from '@/data/outfits';
 import { colors, spacing } from '@/theme';
-
-const OUTFIT_PHOTO = require('@/assets/images/cal-fit-view.png');
-
-// Mock outfits keyed by id — replace once outfits have a real backing store.
-// Only the first photo has a real placeholder image; the next one renders
-// as a plain gray rectangle so the swipe transition is easy to see.
-const OUTFITS: Record<
-  string,
-  {
-    title: string;
-    time: string;
-    category: string;
-    photos: (number | null)[];
-    items: { image: number; label: string }[];
-  }
-> = {
-  '1': {
-    title: 'CASUAL 1',
-    time: 'FRI, 18 MAY 2026',
-    category: 'NIGHT OUT',
-    photos: [OUTFIT_PHOTO, null],
-    items: [
-      {
-        image: require('@/assets/images/items/studded-off-shoulder-top.png'),
-        label: 'Studded Off\nShoulder Top',
-      },
-      { image: require('@/assets/images/items/brown-tank-top.png'), label: 'Brown\nTank Top' },
-      { image: require('@/assets/images/items/black-mini-skirt.png'), label: 'Black\nMini Skirt' },
-      { image: require('@/assets/images/items/brown-boots.png'), label: 'Brown\nBoots' },
-    ],
-  },
-};
 
 const PUSH_DURATION = 340;
 const PUSH_EASING = Easing.out(Easing.cubic);
 
 export default function OutfitScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const outfit = OUTFITS[id ?? '1'] ?? OUTFITS['1'];
+  const { data: outfit, isLoading } = useOutfitDetail(id);
   const [index, setIndex] = useState(0);
   // A shared value, not React state: the entering/exiting worklets below are
   // the SAME function reference on every tap, so each one just reads
@@ -104,7 +74,7 @@ export default function OutfitScreen() {
   const goNext = () => {
     direction.value = 1;
     setHasSwiped(true);
-    setIndex((i) => Math.min(outfit.photos.length - 1, i + 1));
+    setIndex((i) => Math.min(outfit!.photos.length - 1, i + 1));
   };
 
   const pushEntering = (values: EntryAnimationsValues) => {
@@ -171,6 +141,18 @@ export default function OutfitScreen() {
       },
     };
   };
+
+  if (!outfit) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        {!isLoading && (
+          <Text variant="caption" color="gray" style={styles.notFound}>
+            OUTFIT NOT FOUND
+          </Text>
+        )}
+      </SafeAreaView>
+    );
+  }
 
   const photo = outfit.photos[index];
 
@@ -327,6 +309,11 @@ const styles = StyleSheet.create({
   },
   photoPlaceholder: {
     backgroundColor: colors.background.blackOverlay,
+  },
+  notFound: {
+    flex: 1,
+    textAlign: 'center',
+    textAlignVertical: 'center',
   },
   detailsWrap: {
     paddingTop: spacing.lg,
