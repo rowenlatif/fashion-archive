@@ -51,13 +51,15 @@ export default function OutfitScreen() {
   // Only true once a chevron has actually been tapped — the initial photo
   // (arriving from Home/Calendar) must appear instantly, with no push.
   const [hasSwiped, setHasSwiped] = useState(false);
-  // True once the close button has been pressed. Any removal of this view
-  // from the tree fires pushExiting, not just a photo-index swap — without
-  // this flag, leaving the screen entirely would also trigger the swipe's
-  // slide-out, fighting the router's own back transition. Setting it before
-  // router.back() clears the exiting prop on this still-mounted instance in
-  // time for it to be unset by the moment the screen actually unmounts.
-  const [isLeaving, setIsLeaving] = useState(false);
+  // A shared value, not React state: setting isLeaving via setState and
+  // calling router.back() land in the same commit, so this component
+  // unmounts without ever getting a chance to re-render with an updated
+  // prop — the exiting animation would still run using its last-rendered
+  // value. A shared value has no such gap: writing isLeaving.value is
+  // immediately visible to the worklet, which reads it fresh at the moment
+  // it actually runs on the UI thread, however this component's removal
+  // was triggered.
+  const isLeaving = useSharedValue(false);
   // Header and toolbar heights are dynamic (title text wraps, insets vary),
   // so the fixed chevrons — now siblings of the sliding page — measure the
   // photo row's own rect to stay vertically centered on the photo rather
@@ -93,13 +95,18 @@ export default function OutfitScreen() {
   };
   const pushExiting = (values: ExitAnimationsValues) => {
     'worklet';
+    // Leaving the screen entirely rather than swiping — let the router's own
+    // transition (or lack of one) handle it; don't also slide our content.
+    const target = isLeaving.value
+      ? values.currentOriginX
+      : values.currentOriginX - direction.value * values.windowWidth;
     return {
       initialValues: {
         originX: values.currentOriginX,
       },
       animations: {
-        originX: withTiming(values.currentOriginX - direction.value * values.windowWidth, {
-          duration: PUSH_DURATION,
+        originX: withTiming(target, {
+          duration: isLeaving.value ? 0 : PUSH_DURATION,
           easing: PUSH_EASING,
         }),
       },
@@ -118,13 +125,13 @@ export default function OutfitScreen() {
         // Skipped entirely until the first swipe, so arriving on this screen
         // never shows the push.
         entering={hasSwiped ? pushEntering : undefined}
-        exiting={isLeaving ? undefined : pushExiting}
+        exiting={pushExiting}
         style={styles.page}>
         <View style={styles.header}>
           <OutfitTitleBlock title={outfit.title} time={outfit.time} category={outfit.category} />
           <Pressable
             onPress={() => {
-              setIsLeaving(true);
+              isLeaving.value = true;
               router.back();
             }}
             hitSlop={spacing.sm}>
