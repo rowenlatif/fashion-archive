@@ -71,6 +71,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xs,
+    backgroundColor: colors.button.white90,
     borderWidth: 0.5,
     borderColor: colors.stroke.gray200,
     borderRadius: spacing.xs,

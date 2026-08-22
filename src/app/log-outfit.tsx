@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ActionSheet } from '@/components/action-sheet';
 import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
+import { DatePickerSheet } from '@/components/date-picker-sheet';
 import { FormField } from '@/components/form-field';
 import { Icon } from '@/components/icon';
 import { ItemPicker } from '@/components/item-picker';
@@ -26,10 +28,8 @@ function toISODate(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-function addDays(date: Date, days: number): Date {
-  const next = new Date(date);
-  next.setDate(next.getDate() + days);
-  return next;
+function formatDisplayDate(date: Date): string {
+  return `${MONTHS[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
 }
 
 export default function LogOutfitScreen() {
@@ -45,30 +45,25 @@ export default function LogOutfitScreen() {
   const [title, setTitle] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
+  const [eventSheetVisible, setEventSheetVisible] = useState(false);
+  const [dateSheetVisible, setDateSheetVisible] = useState(false);
+
   const selectedTag = tags.find((t) => t.id === tagId);
+  const canSave = Boolean(photoUri && tagId && title.trim());
 
   const toggleItem = (id: string) => {
     setSelectedItemIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
   const onSave = async () => {
+    if (!canSave || !photoUri || !tagId) return;
     setError(null);
-    if (!photoUri) {
-      setError('Add a photo of the outfit.');
-      return;
-    }
-    if (!tagId) {
-      setError('Pick an event type.');
-      return;
-    }
-    const finalTitle =
-      title.trim() ||
-      (selectedTag ? `${selectedTag.label.toUpperCase()} — ${MONTHS[date.getMonth()]} ${date.getDate()}` : '');
     try {
       const outfit = await createOutfit.mutateAsync({
         photoUri,
         wornDate: toISODate(date),
-        title: finalTitle,
+        title: title.trim(),
         tagId,
         itemIds: selectedItemIds,
       });
@@ -88,27 +83,18 @@ export default function LogOutfitScreen() {
         <View style={styles.headerSpacer} />
       </View>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.previewWrap}>
-          {photoUri ? <Image source={{ uri: photoUri }} style={styles.preview} contentFit="cover" /> : null}
-        </View>
-        <View style={styles.imageSources}>
-          <Pressable
-            style={styles.imageSourceOption}
-            onPress={async () => {
-              const result = await pickFromLibrary();
-              if (result) setPhotoUri(result.uri);
-            }}>
-            <Text variant="caption">Photo Library</Text>
-          </Pressable>
-          <Pressable
-            style={styles.imageSourceOption}
-            onPress={async () => {
-              const result = await takePhoto();
-              if (result) setPhotoUri(result.uri);
-            }}>
-            <Text variant="caption">Take Photo</Text>
-          </Pressable>
-        </View>
+        <Pressable style={styles.previewWrap} onPress={() => setPhotoSheetVisible(true)}>
+          {photoUri ? (
+            <Image source={{ uri: photoUri }} style={styles.preview} contentFit="cover" />
+          ) : (
+            <View style={styles.previewPlaceholder}>
+              <Icon name="plus" size={20} />
+              <Text variant="caption" color="gray">
+                Add Outfit Photo
+              </Text>
+            </View>
+          )}
+        </Pressable>
 
         <ItemPicker
           selectedIds={selectedItemIds}
@@ -117,37 +103,41 @@ export default function LogOutfitScreen() {
         />
 
         <View style={styles.field}>
-          <Text variant="caption" color="gray">
-            EVENT TYPE
-          </Text>
-          <View style={styles.chipRow}>
-            {tags.map((tag) => (
-              <Chip key={tag.id} label={tag.label} selected={tagId === tag.id} onPress={() => setTagId(tag.id)} />
-            ))}
+          <View style={styles.fieldRow}>
+            <Text variant="caption" color="gray">
+              EVENT TYPE
+            </Text>
+            <View style={styles.fieldControl}>
+              {selectedTag && (
+                <View style={styles.selectedChipWrap}>
+                  <Chip label={selectedTag.label} selected />
+                  <Pressable onPress={() => setTagId(null)} hitSlop={spacing.sm}>
+                    <Icon name="close" size={8} color="gray" />
+                  </Pressable>
+                </View>
+              )}
+              <Pressable onPress={() => setEventSheetVisible(true)} hitSlop={spacing.sm}>
+                <Icon name="chevron" color="gray" />
+              </Pressable>
+            </View>
           </View>
         </View>
 
         <View style={styles.field}>
-          <Text variant="caption" color="gray">
-            DATE
-          </Text>
-          <View style={styles.dateRow}>
-            <Pressable onPress={() => setDate((d) => addDays(d, -1))} hitSlop={spacing.sm}>
-              <Icon name="chevron" rotation={90} />
-            </Pressable>
-            <Text variant="mono">{toISODate(date)}</Text>
-            <Pressable onPress={() => setDate((d) => addDays(d, 1))} hitSlop={spacing.sm}>
-              <Icon name="chevron" rotation={270} />
-            </Pressable>
+          <View style={styles.fieldRow}>
+            <Text variant="caption" color="gray">
+              DATE
+            </Text>
+            <View style={styles.fieldControl}>
+              <Text variant="mono">{formatDisplayDate(date)}</Text>
+              <Pressable onPress={() => setDateSheetVisible(true)} hitSlop={spacing.sm}>
+                <Icon name="chevron" color="gray" />
+              </Pressable>
+            </View>
           </View>
         </View>
 
-        <FormField
-          label="TITLE (OPTIONAL)"
-          value={title}
-          onChangeText={setTitle}
-          placeholder={selectedTag ? `${selectedTag.label.toUpperCase()} — …` : undefined}
-        />
+        <FormField label="TITLE" value={title} onChangeText={setTitle} placeholder="Name this outfit" />
 
         {error && (
           <Text variant="caption" color="gray">
@@ -158,9 +148,53 @@ export default function LogOutfitScreen() {
         <Button
           label={createOutfit.isPending ? 'Saving…' : 'Save Outfit'}
           onPress={onSave}
-          disabled={createOutfit.isPending}
+          disabled={!canSave || createOutfit.isPending}
         />
       </ScrollView>
+
+      <ActionSheet visible={photoSheetVisible} onClose={() => setPhotoSheetVisible(false)} title="ADD PHOTO">
+        <Pressable
+          style={styles.sheetOption}
+          onPress={async () => {
+            setPhotoSheetVisible(false);
+            const result = await pickFromLibrary();
+            if (result) setPhotoUri(result.uri);
+          }}>
+          <Text variant="body">Photo Library</Text>
+        </Pressable>
+        <Pressable
+          style={styles.sheetOption}
+          onPress={async () => {
+            setPhotoSheetVisible(false);
+            const result = await takePhoto();
+            if (result) setPhotoUri(result.uri);
+          }}>
+          <Text variant="body">Take Photo</Text>
+        </Pressable>
+      </ActionSheet>
+
+      <ActionSheet visible={eventSheetVisible} onClose={() => setEventSheetVisible(false)} title="EVENT TYPE">
+        <View style={styles.sheetChipRow}>
+          {tags.map((tag) => (
+            <Chip
+              key={tag.id}
+              label={tag.label}
+              selected={tagId === tag.id}
+              onPress={() => {
+                setTagId(tag.id);
+                setEventSheetVisible(false);
+              }}
+            />
+          ))}
+        </View>
+      </ActionSheet>
+
+      <DatePickerSheet
+        visible={dateSheetVisible}
+        value={date}
+        onClose={() => setDateSheetVisible(false)}
+        onChange={setDate}
+      />
     </SafeAreaView>
   );
 }
@@ -184,7 +218,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: spacing.xxl,
     paddingBottom: spacing.xxxl,
-    gap: spacing.xl,
+    gap: spacing.xxl,
   },
   previewWrap: {
     alignSelf: 'center',
@@ -194,30 +228,42 @@ const styles = StyleSheet.create({
     borderRadius: spacing.sm,
     overflow: 'hidden',
   },
+  previewPlaceholder: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+  },
   preview: {
     width: '100%',
     height: '100%',
   },
-  imageSources: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  imageSourceOption: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-  },
   field: {
     gap: spacing.sm,
   },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-  },
-  dateRow: {
+  fieldRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.lg,
+    justifyContent: 'space-between',
+  },
+  fieldControl: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  selectedChipWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  sheetOption: {
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+  },
+  sheetChipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: spacing.sm,
   },
 });
