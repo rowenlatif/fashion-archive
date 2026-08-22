@@ -62,14 +62,14 @@ export const typography = {
     letterSpacing: 0,
   },
   ibmBody: {
-    fontFamily: 'IBMPlexMono_400Regular',
+    fontFamily: 'Satoshi-Regular',
     fontSize: 12,
     lineHeight: 15.6,
     fontWeight: '400',
     letterSpacing: 0,
   },
   ibmCaption: {
-    fontFamily: 'IBMPlexMono_400Regular',
+    fontFamily: 'Satoshi-Regular',
     fontSize: 12,
     lineHeight: 15.6,
     fontWeight: '400',
@@ -77,7 +77,7 @@ export const typography = {
     color: colors.text.gray,
   },
   ibmMicro: {
-    fontFamily: 'IBMPlexMono_400Regular',
+    fontFamily: 'Satoshi-Regular',
     fontSize: 8,
     lineHeight: 10.4,
     fontWeight: '400',
