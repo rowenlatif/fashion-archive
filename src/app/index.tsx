@@ -31,9 +31,12 @@ export default function HomeScreen() {
   const router = useRouter();
   const { data: outfits = [] } = useOutfits();
 
-  const today = new Date();
-  const year = today.getFullYear();
-  const monthIndex = today.getMonth();
+  const [viewedMonth, setViewedMonth] = useState(() => {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), 1);
+  });
+  const year = viewedMonth.getFullYear();
+  const monthIndex = viewedMonth.getMonth();
   const monthLabel = `${MONTH_NAMES[monthIndex]} ${year}`;
   const monthPrefix = `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
 
@@ -62,6 +65,8 @@ export default function HomeScreen() {
     const outfitId = monthDays[index]?.outfitId;
     if (outfitId) router.push(`/outfit/${outfitId}`);
   };
+  const goToPrevMonth = () => setViewedMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1));
+  const goToNextMonth = () => setViewedMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1, 1));
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -74,7 +79,13 @@ export default function HomeScreen() {
           </View>
         ) : (
           <View style={styles.calendarWrap}>
-            <CalendarView month={monthLabel} days={monthDays} onPressDay={openCalendarDay} />
+            <CalendarView
+              month={monthLabel}
+              days={monthDays}
+              onPrevMonth={goToPrevMonth}
+              onNextMonth={goToNextMonth}
+              onPressDay={openCalendarDay}
+            />
             <View>
               {mostWorn.map((item, i) => (
                 <MostWornCard
