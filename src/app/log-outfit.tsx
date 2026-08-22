@@ -89,7 +89,7 @@ export default function LogOutfitScreen() {
           ) : (
             <View style={styles.previewPlaceholder}>
               <Icon name="plus" size={20} />
-              <Text variant="caption" color="gray">
+              <Text variant="caption" color="black">
                 Add Outfit Photo
               </Text>
             </View>
